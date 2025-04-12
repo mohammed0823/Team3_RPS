@@ -11,7 +11,7 @@ def detect_hand_shape(landmarks):
     pinky_tip = landmarks[20]
     
     fingers = [index_tip, middle_tip, ring_tip, pinky_tip]
-    extended = sum(1 for finger in fingers if finger.y < landmarks[5].y) # Count extended fingers
+    extended = sum(1 for finger in fingers if abs(finger.x - landmarks[5].x) > 0.1) # Count extended fingers
     
     if extended == 0:
       return "Rock"
@@ -24,7 +24,9 @@ def detect_hand_shape(landmarks):
 
 def main():
     mp_hands = mp.solutions.hands
-    hands = mp_hands.Hands(min_detection_confidence=0.7,
+    hands = mp_hands.Hands(static_image_mode=False,
+                           max_num_hands=2,
+                           min_detection_confidence=0.7,
                            min_tracking_confidence=0.7)
     mp_draw = mp.solutions.drawing_utils
     cap = cv2.VideoCapture(0)
@@ -34,7 +36,6 @@ def main():
       if not ret:
         break
       
-      h, w, c = frame.shape
       frame = cv2.flip(frame, 1)
       rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
       result = hands.process(rgb_frame)
@@ -56,8 +57,8 @@ def main():
       if cv2.waitKey(1) & 0xFF == ord('q'):
         break
       
-      cap.release()
-      cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
