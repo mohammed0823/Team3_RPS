@@ -10,14 +10,14 @@ def detect_hand_shape(landmarks):
     ring_tip = landmarks[16]
     pinky_tip = landmarks[20]
     
-    fingers = [index_tip, middle_tip, ring_tip, pinky_tip]
+    fingers = [thumb_tip, index_tip, middle_tip, ring_tip, pinky_tip]
     extended = sum(1 for finger in fingers if abs(finger.x - landmarks[5].x) > 0.1) # Count extended fingers
     
     if extended == 0:
       return "Rock"
     elif extended == 2:
       return "Scissors"
-    elif extended == 4:
+    elif extended > 2:
       return "Paper"
     else:
       return None
@@ -40,20 +40,20 @@ def main():
       rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
       result = hands.process(rgb_frame)
       
-      detected_gesture = "No hand detected"
+      gestures = []
       if result.multi_hand_landmarks:
-        for hand_landmarks in result.multi_hand_landmarks:
-          mp_draw.draw_landmarks(frame, hand_landmarks,
-                                 mp_hands.HAND_CONNECTIONS)
-          gesture = detect_hand_shape(hand_landmarks.landmark)
-          if gesture:
-            detected_gesture = gesture
-    
-      # Display detected gesture
-      cv2.putText(frame, f"Detected: {detected_gesture}", (50, 50),
-                  cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        for i, hand_landmarks in enumerate(result.multi_hand_landmarks[::-1]):
+            mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            gesture = detect_hand_shape(hand_landmarks.landmark)
+            gestures.append((i, gesture))
+
+    # Display both gestures
+      for i, gesture in gestures:
+        label = f"Player {i+1}: {gesture if gesture else 'Unknown'}"
+        cv2.putText(frame, label, (50, 50 + i * 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
       
-      cv2.imshow("Hand Gesture Detection", frame)
+      cv2.imshow("RPS Hand Gesture Detection", frame)
       if cv2.waitKey(1) & 0xFF == ord('q'):
         break
       
